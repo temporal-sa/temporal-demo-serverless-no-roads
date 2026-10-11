@@ -70,11 +70,11 @@ func SeedHandler(tc client.Client) http.HandlerFunc {
 				defer wg.Done()
 
 				name := fmt.Sprintf("seed-%03d", i+1)
-				workflowID := "demo-seed-" + shortID()
+				workflowID := taskqueue.ExecutionID("demo-seed-" + shortID())
 
 				opts := client.StartWorkflowOptions{
 					ID:        workflowID,
-					TaskQueue: taskqueue.DemoTaskQueue,
+					TaskQueue: taskqueue.Name(),
 				}
 
 				_, err := tc.ExecuteWorkflow(r.Context(), opts, workflows.DemoWorkflow, workflows.DemoInput{

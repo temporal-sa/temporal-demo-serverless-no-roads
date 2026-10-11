@@ -26,7 +26,11 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, taskqueue.DemoTaskQueue, worker.Options{
+	version := worker.WorkerDeploymentVersion{
+		DeploymentName: taskqueue.DeploymentName(),
+		BuildID:        taskqueue.BuildID(),
+	}
+	w := worker.New(c, taskqueue.Name(), worker.Options{
 		MaxConcurrentActivityExecutionSize:     cfg.MaxConcurrentActivityExecutionSize,
 		MaxConcurrentWorkflowTaskExecutionSize: cfg.MaxConcurrentWorkflowTaskExecutionSize,
 		DisableEagerActivities:                 true,
@@ -35,16 +39,14 @@ func main() {
 		DeploymentOptions: worker.DeploymentOptions{
 			UseVersioning:             true,
 			DefaultVersioningBehavior: workflow.VersioningBehaviorPinned,
-			Version: worker.WorkerDeploymentVersion{
-				DeploymentName: taskqueue.DemoTaskQueue,
-				BuildID:        taskqueue.DemoBuildID,
-			},
+			Version:                   version,
 		},
 	})
 	w.RegisterWorkflow(workflows.DemoWorkflow)
 	w.RegisterActivity(&activities.Activities{})
 
-	log.Printf("local worker started, polling task queue: %s", taskqueue.DemoTaskQueue)
+	log.Printf("local worker started, polling task queue: %s deployment: %s build: %s",
+		taskqueue.Name(), version.DeploymentName, version.BuildID)
 
 	if err := w.Run(worker.InterruptCh()); err != nil {
 		log.Fatalln("worker error:", err)

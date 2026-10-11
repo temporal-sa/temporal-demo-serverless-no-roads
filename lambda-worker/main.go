@@ -42,13 +42,20 @@ func main() {
 	//
 	// TLS is enabled automatically by the SDK when TEMPORAL_API_KEY is set.
 
+	// Queue and deployment identity come from the process environment so an
+	// isolated workspace can poll its own queue and claim its own Worker
+	// Deployment. Unset, these are the shared demo's serverless-webinar / 1.0.0.
+	version := worker.WorkerDeploymentVersion{
+		DeploymentName: taskqueue.DeploymentName(),
+		BuildID:        taskqueue.BuildID(),
+	}
+	log.Printf("lambda worker: task_queue=%s deployment=%s build_id=%s",
+		taskqueue.Name(), version.DeploymentName, version.BuildID)
+
 	lambdaworker.RunWorker(
-		worker.WorkerDeploymentVersion{
-			DeploymentName: taskqueue.DemoTaskQueue,
-			BuildID:        taskqueue.DemoBuildID,
-		},
+		version,
 		func(opts *lambdaworker.Options) error {
-			opts.TaskQueue = taskqueue.DemoTaskQueue
+			opts.TaskQueue = taskqueue.Name()
 			opts.WorkerOptions.MaxConcurrentActivityExecutionSize = cfg.MaxConcurrentActivityExecutionSize
 			opts.WorkerOptions.MaxConcurrentWorkflowTaskExecutionSize = cfg.MaxConcurrentWorkflowTaskExecutionSize
 			// Disable eager activity dispatch so activity tasks flow through the
@@ -61,10 +68,7 @@ func main() {
 			// UseVersioning: true, Temporal won't route versioned tasks here.
 			opts.WorkerOptions.DeploymentOptions = worker.DeploymentOptions{
 				UseVersioning:             true,
-				Version: worker.WorkerDeploymentVersion{
-					DeploymentName: "serverless-webinar",
-					BuildID:        "1.0.0",
-				},
+				Version:                   version,
 				DefaultVersioningBehavior: workflow.VersioningBehaviorPinned,
 			}
 

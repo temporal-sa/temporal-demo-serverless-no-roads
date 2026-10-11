@@ -38,13 +38,14 @@ func SubmitHandler(tc client.Client) http.HandlerFunc {
 			return
 		}
 
-		// Use the name as a human-readable workflow ID prefix so it shows up
-		// nicely in the Temporal Cloud UI during the demo.
-		workflowID := "demo-" + sanitizeName(req.Name) + "-" + shortID()
+		// Keep the name at the front of the ID so the audience UI can show it,
+		// and append the task queue so isolated workspaces sharing this
+		// namespace cannot collide.
+		workflowID := taskqueue.ExecutionID("demo-" + sanitizeName(req.Name) + "-" + shortID())
 
 		opts := client.StartWorkflowOptions{
 			ID:        workflowID,
-			TaskQueue: taskqueue.DemoTaskQueue,
+			TaskQueue: taskqueue.Name(),
 		}
 
 		we, err := tc.ExecuteWorkflow(r.Context(), opts, workflows.DemoWorkflow, workflows.DemoInput{

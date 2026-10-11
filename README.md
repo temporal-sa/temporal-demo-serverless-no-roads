@@ -10,7 +10,7 @@ A live audience-participation demo for Temporal's Serverless Workers feature. At
 temporal-serverless-no-roads/
 ├── shared/                    # Shared Go module — workflows, activities, task queue, worker config
 │   ├── activities/            # ProcessSubmission + SimulateWork1/2/3 activity implementations
-│   ├── taskqueue/             # Shared task queue name constant
+│   ├── taskqueue/             # Task queue and Worker Deployment identity (env, with defaults)
 │   ├── workerconfig/          # Reads worker concurrency from environment variables
 │   │   └── .env               # Worker concurrency settings for local dev/to invoke for the Lambda
 │   └── workflows/             # DemoWorkflow definition
@@ -37,8 +37,8 @@ temporal-serverless-no-roads/
 
 Audience browsers submit their name via the demo UI, which is served by the
 demo app running on EKS. The submit handler starts a `DemoWorkflow` via the
-Temporal Go SDK client. Temporal Cloud receives it, routes it to the
-`serverless-webinar` task queue, and the WCI scaler monitors backlog depth —
+Temporal Go SDK client. Temporal Cloud receives it, routes it to the task queue
+(`serverless-webinar`, or `TEMPORAL_TASK_QUEUE` when that is set), and the WCI scaler monitors backlog depth —
 invoking the Lambda worker when tasks need processing. The Lambda worker polls
 the task queue, executes `DemoWorkflow` (three chained `SimulateWork`
 activities with built in delays to show execution over time), and exits when idle. The metrics handler polls Temporal Cloud for
@@ -414,6 +414,9 @@ scaling visuals before or during the audience participation moment.
 | `TEMPORAL_API_KEY_SECRET_ARN` | Either/or | Secrets Manager ARN to fetch the key from at cold start (Option B) |
 | `WORKER_MAX_CONCURRENT_ACTIVITIES` | No | Max activity tasks per invocation (default: `5`) |
 | `WORKER_MAX_CONCURRENT_WORKFLOWS` | No | Max workflow tasks per invocation (default: `5`) |
+| `TEMPORAL_TASK_QUEUE` | No | Queue to poll (default: `serverless-webinar`). Isolated workspaces set this to their own queue. |
+| `TEMPORAL_WORKER_DEPLOYMENT_NAME` | No | Worker Deployment name to claim (default: `serverless-webinar`). `TEMPORAL_DEPLOYMENT_NAME` is the fallback. |
+| `TEMPORAL_WORKER_BUILD_ID` | No | Worker Deployment build ID to claim (default: `1.0.0`) |
 
 The `.env` file in `lambda-worker/` documents all variables but is not bundled
 in the deployment zip.
@@ -425,6 +428,7 @@ in the deployment zip.
 | `TEMPORAL_ADDRESS` | No | Temporal server address (default: `localhost:7233`) |
 | `TEMPORAL_NAMESPACE` | No | Temporal namespace (default: `default`) |
 | `TEMPORAL_API_KEY` | No | Temporal Cloud API key |
+| `TEMPORAL_TASK_QUEUE` | No | Queue for starts, metrics, and visibility counts (default: `serverless-webinar`). Workflow IDs include this value. |
 
 ### Worker concurrency tuning
 

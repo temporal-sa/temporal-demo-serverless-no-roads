@@ -20,14 +20,14 @@ import (
 
 // MetricsResponse is the JSON shape the frontend polls for.
 type MetricsResponse struct {
-	RunningWorkflows   int64   `json:"runningWorkflows"`
-	CompletedWorkflows int64   `json:"completedWorkflows"`
+	RunningWorkflows   int64 `json:"runningWorkflows"`
+	CompletedWorkflows int64 `json:"completedWorkflows"`
 	// LambdaConcurrency is the number of active Lambda invocations, derived
 	// from the count of live pollers on the activity task queue. Each Lambda
 	// invocation registers exactly one activity-task poller, so this count is
 	// real-time (seconds of lag) rather than relying on CloudWatch (1-3 min lag).
-	LambdaConcurrency  float64 `json:"lambdaConcurrency"`
-	BacklogDepth       float64 `json:"backlogDepth"`
+	LambdaConcurrency float64 `json:"lambdaConcurrency"`
+	BacklogDepth      float64 `json:"backlogDepth"`
 	// SyncMatchRate is the percentage of tasks that were immediately dispatched
 	// to a polling worker (sync-matched) vs. having to wait in the backlog.
 	// 100% = every task found a waiting worker instantly, no scaling needed.
@@ -112,14 +112,14 @@ func MetricsHandler(
 // workflow counts on the demo task queue.
 func fetchTemporalWorkflowCounts(ctx context.Context, tc client.Client) (running, completed int64, err error) {
 	runningResp, err := tc.CountWorkflow(ctx, &workflowservice.CountWorkflowExecutionsRequest{
-		Query: `TaskQueue="` + taskqueue.DemoTaskQueue + `" AND ExecutionStatus="Running"`,
+		Query: taskqueue.CountQuery("Running"),
 	})
 	if err != nil {
 		return 0, 0, err
 	}
 
 	completedResp, err := tc.CountWorkflow(ctx, &workflowservice.CountWorkflowExecutionsRequest{
-		Query: `TaskQueue="` + taskqueue.DemoTaskQueue + `" AND ExecutionStatus="Completed"`,
+		Query: taskqueue.CountQuery("Completed"),
 	})
 	if err != nil {
 		return 0, 0, err
@@ -172,7 +172,7 @@ func fetchTaskQueueStats(ctx context.Context, tc client.Client) (backlog float64
 		resp, respErr := tc.WorkflowService().DescribeTaskQueue(ctx, &workflowservice.DescribeTaskQueueRequest{
 			Namespace: namespace,
 			TaskQueue: &taskqueuepb.TaskQueue{
-				Name: taskqueue.DemoTaskQueue,
+				Name: taskqueue.Name(),
 			},
 			TaskQueueType: tqType,
 			ReportStats:   true,
