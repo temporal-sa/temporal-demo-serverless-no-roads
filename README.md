@@ -400,6 +400,8 @@ live demo. Not visible to the audience by default.
 The panel fires N workflows simultaneously (default 30, max 200) to prime the
 scaling visuals before or during the audience participation moment.
 
+To present the demo, follow [RUNBOOK.md](RUNBOOK.md): the walkthrough beat by beat, and where in the code each part happens.
+
 ---
 
 ## Configuration reference
